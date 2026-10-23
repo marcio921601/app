@@ -28,6 +28,7 @@ Preencher os campos `sync: false` no painel seguro:
 | --- | --- |
 | APP_ORIGIN | Origem HTTPS exata do serviço, sem caminho |
 | DATABASE_URL | Credencial runtime PostgreSQL |
+| DATABASE_CA | Certificado CA em PEM obtido em Database Settings do Supabase; incluir o conteúdo completo com quebras de linha |
 | SUPABASE_URL | URL do projeto correto |
 | SUPABASE_PUBLISHABLE_KEY | Chave publicável do projeto |
 | SUPABASE_SECRET_KEY | Chave administrativa, usada apenas no Node |

@@ -19,7 +19,7 @@ Data: 23/10/2026. Estado: **em homologação; operação da equipe ainda não li
 | Dependências após atualização | npm audit: 0 vulnerabilidades; Vite 8.3.5 e plugin React 6.1.2 |
 | Supabase | Projeto gratuito criado em Diário.org, região São Paulo, status inicial ACTIVE_HEALTHY |
 | Banco hospedado | 2 migrações aplicadas em app, 4 perfis, 0 usuários/obras/diários; anon/authenticated sem USAGE; advisor de segurança sem lints |
-| Perfil runtime | Permissões de tabela preparadas; sem superuser, BYPASSRLS, CREATE no app ou UPDATE em migrações. Ainda NOLOGIN; conexão runtime real depende de credencial segura |
+| Perfil runtime hospedado | Login exclusivo ativado e testado pelo pooler de sessão com certificado CA oficial e validação TLS completa; sem CREATE em app ou UPDATE em migrações; leitura de Auth recusada; gravação de prova desfeita por rollback |
 | Cadastro público | Desativado no painel com confirmação específica do responsável |
 | Blueprint | Estrutura aprovada pelo JSON Schema oficial draft 2020-12; validação de plataforma ainda depende de login Render |
 
@@ -30,7 +30,7 @@ Os testes HTTP com PostgreSQL usam o provedor falso do harness, exclusivamente n
 ## Pendências de liberação
 
 - Revisão independente identificou oito problemas; todos reproduzidos e corrigidos, com suíte completa aprovada. Detalhes em `revisao-2026-10-23.md`.
-- Ativar e validar credencial runtime com privilégios mínimos; configurar chaves no ambiente seguro. O executor SQL do conector não permite SET ROLE para esse papel; a inspeção de grants não substitui uma conexão autenticada real.
+- Instalar a credencial runtime e DATABASE_CA no ambiente seguro de hospedagem, junto com a chave administrativa do Auth e a chave de sessão. A conexão autenticada do runtime já foi validada; o executor SQL não permite SET ROLE, por isso essa validação usou uma conexão PostgreSQL independente.
 - Configurar SMTP e domínio de envio; Resend gratuito aprovado, acesso ao DNS confirmado, criação/entrada da conta em andamento.
 - Configurar callbacks/templates e validar convite, senha e recuperação reais com destinatários autorizados.
 - Validar Blueprint com acesso autenticado ao Render. O CLI 2.31.0 foi obtido da distribuição oficial com hash conferido; a execução parou por falta de login do CLI.
