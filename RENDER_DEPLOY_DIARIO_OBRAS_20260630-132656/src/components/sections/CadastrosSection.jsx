@@ -13,9 +13,11 @@ export function CadastrosSection({
   onSelectObra,
   onAddProfissional,
   onUpdateProfissional,
+  onSaveProfissional,
   onRemoveProfissional,
   onAddAfastamento,
   onUpdateAfastamento,
+  onSaveAfastamento,
   onRemoveAfastamento,
 }) {
   const profissionaisIds = new Set(profissionaisObraAtiva.map((item) => item.id));
@@ -88,7 +90,8 @@ export function CadastrosSection({
                   </td>
                   <td><input disabled={readOnly} value={profissional.observacoes} onChange={(event) => onUpdateProfissional(profissional.id, "observacoes", event.target.value)} /></td>
                   <td className="actions-cell">
-                    <button type="button" disabled={readOnly} className="btn btn-danger" onClick={() => onRemoveProfissional(profissional.id)}>Excluir</button>
+                    <button type="button" disabled={readOnly} className="btn btn-primary" onClick={()=>onSaveProfissional(profissional.id)}>Salvar</button>
+                    <button type="button" disabled={readOnly} className="btn btn-danger" onClick={() => onRemoveProfissional(profissional.id)}>Arquivar</button>
                   </td>
                 </tr>
               ))}
@@ -143,6 +146,7 @@ export function CadastrosSection({
                     <td><input disabled={readOnly} value={afastamento.motivo} onChange={(event) => onUpdateAfastamento(afastamento.id, "motivo", event.target.value)} /></td>
                     <td><input disabled={readOnly} value={afastamento.autorizadoPor} onChange={(event) => onUpdateAfastamento(afastamento.id, "autorizadoPor", event.target.value)} /></td>
                     <td className="actions-cell">
+                      <button type="button" disabled={readOnly} className="btn btn-primary" onClick={()=>onSaveAfastamento(afastamento.id)}>Salvar</button>
                       <button type="button" disabled={readOnly} className="btn btn-danger" onClick={() => onRemoveAfastamento(afastamento.id)}>Excluir</button>
                     </td>
                   </tr>

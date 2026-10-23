@@ -3,7 +3,7 @@ import { Field } from "@/components/common/Field";
 import { StatCard } from "@/components/common/StatCard";
 import { formatNumber } from "@/utils/formatters";
 
-export function GerencialSection({ data, gerencialIndicadores, resumoROS, onCopyResumo, onUpdateGerencial }) {
+export function GerencialSection({ data, gerencialIndicadores, resumoROS, onCopyResumo, onUpdateGerencial,readOnly }) {
   return (
     <div className="section-stack">
       <div className="stats-grid stats-grid-6">
@@ -18,28 +18,28 @@ export function GerencialSection({ data, gerencialIndicadores, resumoROS, onCopy
       <Card title="Relatorio gerencial ROS / Itauba" subtitle="Campos estruturados para a ata e o relatorio padrao.">
         <div className="form-grid form-grid-2">
           <Field label="Prazo / marco relevante">
-            <input value={data.gerencial.prazoMarco} onChange={(event) => onUpdateGerencial("prazoMarco", event.target.value)} />
+            <input disabled={readOnly} value={data.gerencial.prazoMarco} onChange={(event) => onUpdateGerencial("prazoMarco", event.target.value)} />
           </Field>
           <Field label="Responsavel">
-            <input value={data.gerencial.responsavel} onChange={(event) => onUpdateGerencial("responsavel", event.target.value)} />
+            <input disabled={readOnly} value={data.gerencial.responsavel} onChange={(event) => onUpdateGerencial("responsavel", event.target.value)} />
           </Field>
           <Field label="Riscos">
-            <textarea rows="6" value={data.gerencial.riscos} onChange={(event) => onUpdateGerencial("riscos", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.riscos} onChange={(event) => onUpdateGerencial("riscos", event.target.value)} />
           </Field>
           <Field label="Restricoes / impedimentos">
-            <textarea rows="6" value={data.gerencial.restricoes} onChange={(event) => onUpdateGerencial("restricoes", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.restricoes} onChange={(event) => onUpdateGerencial("restricoes", event.target.value)} />
           </Field>
           <Field label="Aquisicoes / suprimentos">
-            <textarea rows="6" value={data.gerencial.aquisicoes} onChange={(event) => onUpdateGerencial("aquisicoes", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.aquisicoes} onChange={(event) => onUpdateGerencial("aquisicoes", event.target.value)} />
           </Field>
           <Field label="SST / qualidade">
-            <textarea rows="6" value={data.gerencial.sst} onChange={(event) => onUpdateGerencial("sst", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.sst} onChange={(event) => onUpdateGerencial("sst", event.target.value)} />
           </Field>
           <Field label="PPC / comentarios operacionais">
-            <textarea rows="6" value={data.gerencial.ppc} onChange={(event) => onUpdateGerencial("ppc", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.ppc} onChange={(event) => onUpdateGerencial("ppc", event.target.value)} />
           </Field>
           <Field label="Proximas acoes">
-            <textarea rows="6" value={data.gerencial.proximasAcoes} onChange={(event) => onUpdateGerencial("proximasAcoes", event.target.value)} />
+            <textarea disabled={readOnly} rows="6" value={data.gerencial.proximasAcoes} onChange={(event) => onUpdateGerencial("proximasAcoes", event.target.value)} />
           </Field>
         </div>
       </Card>

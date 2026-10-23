@@ -31,6 +31,7 @@ export function getWeekday(dateStr) {
 }
 
 export function formatNumber(value, digits = 2) {
+  if(value===null)return '—';
   return new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: digits,

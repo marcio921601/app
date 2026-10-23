@@ -1,215 +1,64 @@
-import { Card } from "@/components/common/Card";
-import { Field } from "@/components/common/Field";
-import { StatCard } from "@/components/common/StatCard";
-import { DASHBOARD_WIDGETS, TAB_ITEMS } from "@/data/defaults";
-
-function toggleValue(list = [], value, checked) {
-  if (checked) return Array.from(new Set([...list, value]));
-  return list.filter((item) => item !== value);
+import {useState} from 'react';
+import {Card} from '../common/Card';
+import {Field} from '../common/Field';
+import {TAB_ITEMS} from '../../data/defaults';
+export function AdministrationSection({data,currentUser,actualAccess,accessProfiles,onSetVisualizarComoPerfil,onInviteUser,onUpdateMemberships,onDeactivateUser,onUpdateProfile}) {
+  const [nome,setNome]=useState(''),[email,setEmail]=useState(''),[cargo,setCargo]=useState(''),[obraId,setObraId]=useState(''),[perfil,setPerfil]=useState('apontador'),[send,setSend]=useState(false),[busy,setBusy]=useState(false);
+  const obras=data.multiobra.obras.filter(o=>o.version),perfis=accessProfiles.filter(p=>p.id!=='gerencia');
+  async function invite(event) {
+    event.preventDefault();setBusy(true);
+    try{const result=await onInviteUser({nome,email,cargo,memberships:obraId?[{obraId,perfil}]:[],send});if(result){setNome('');setEmail('');setCargo('');setSend(false);}}
+    finally{setBusy(false);}
+  }
+  return <div className="section-stack">
+    <Card title="Sessão autenticada"><p>{currentUser.nome} · {currentUser.email}</p>
+      <Field label="Visualizar como"><select aria-label="Visualizar como" value="" onChange={e=>onSetVisualizarComoPerfil(e.target.value)} disabled={!actualAccess.isAdmin}>
+        <option value="">Administrativo</option>{perfis.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
+      </select></Field>
+    </Card>
+    <Card title="Convidar pessoa" subtitle="Prepare o cadastro e libere as obras. O convite fica pendente até a pessoa definir a senha.">
+      <form aria-label="Convidar pessoa" onSubmit={invite} className="stack">
+        <div className="form-grid form-grid-3"><Field label="Nome"><input required value={nome} onChange={e=>setNome(e.target.value)}/></Field>
+          <Field label="E-mail"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></Field>
+          <Field label="Cargo"><input value={cargo} onChange={e=>setCargo(e.target.value)}/></Field>
+          <Field label="Obra liberada"><select value={obraId} onChange={e=>setObraId(e.target.value)}><option value="">Sem obra por enquanto</option>{obras.map(o=><option key={o.id} value={o.id}>{o.codigo+' · '+o.nome}</option>)}</select></Field>
+          <Field label="Perfil"><select value={perfil} onChange={e=>setPerfil(e.target.value)}>{perfis.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></Field>
+        </div>
+        <label><input type="checkbox" checked={send} onChange={e=>setSend(e.target.checked)}/> Enviar convite por e-mail agora</label>
+        <button className="btn btn-primary" type="submit" disabled={busy}>{send?'Enviar convite':'Preparar convite'}</button>
+      </form>
+    </Card>
+    <Card title="Pessoas e acesso às obras" subtitle="As alterações passam a valer no próximo acesso à API.">
+      <div className="table-wrap"><table className="data-table"><thead><tr><th>Pessoa</th><th>Situação</th><th>Obras e perfis</th><th>Ações</th></tr></thead><tbody>
+        {data.administracao.usuarios.map(user=><UserAccessRow key={user.id+':'+user.version} user={user} obras={obras} profiles={perfis} memberships={data.administracao.memberships.filter(m=>m.userId===user.id)} onSave={onUpdateMemberships} onDeactivate={onDeactivateUser}/>)}
+      </tbody></table></div>
+    </Card>
+    <Card title="Permissões dos perfis">{accessProfiles.map(profile=><ProfileEditor key={profile.id+':'+profile.version} profile={profile} onSave={onUpdateProfile}/>)}</Card>
+  </div>;
 }
-
-function labelsForTabs(values = []) {
-  return TAB_ITEMS.filter((item) => values.includes(item.value)).map((item) => item.label).join(", ");
+function UserAccessRow({user,obras,profiles,memberships,onSave,onDeactivate}) {
+  const [links,setLinks]=useState(Object.fromEntries(memberships.map(m=>[m.obraId,m.perfil]))),[busy,setBusy]=useState(false);
+  async function run(action){setBusy(true);try{await action();}finally{setBusy(false);}}
+  return <tr><td><strong>{user.nome}</strong><div>{user.email}</div><small>{user.cargo}{user.isAdmin?' · Administrador global':''}</small></td>
+    <td>{user.status==='pending'?'Pendente':user.ativo?'Ativo':'Bloqueado'}</td><td><div className="stack">
+      {obras.map(obra=><div key={obra.id} className="button-row">
+        <label><input type="checkbox" aria-label={'Liberar '+obra.codigo} checked={!!links[obra.id]} onChange={e=>setLinks(current=>{const next={...current};if(e.target.checked)next[obra.id]='apontador';else delete next[obra.id];return next;})}/> {obra.codigo}</label>
+        <select aria-label={'Perfil na '+obra.codigo} disabled={!links[obra.id]||user.isAdmin} value={links[obra.id]||'apontador'} onChange={e=>setLinks(current=>({...current,[obra.id]:e.target.value}))}>{profiles.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select>
+      </div>)}
+    </div></td><td><div className="stack"><button className="btn btn-primary" disabled={busy} onClick={()=>run(()=>onSave(user.id,Object.entries(links).map(([obraId,perfil])=>({obraId,perfil})),user.version))}>Salvar acessos</button>
+      <button className="btn btn-danger" disabled={busy||!user.ativo} onClick={()=>run(()=>onDeactivate(user.id,user.version))}>Desativar</button></div></td></tr>;
 }
-
-export function AdministrationSection({
-  data,
-  currentUser,
-  currentAccess,
-  actualAccess,
-  accessProfiles,
-  visibleTabs,
-  isPreviewing,
-  readOnly,
-  onSetUsuarioAtivo,
-  onAddUsuario,
-  onUpdateUsuario,
-  onRemoveUsuario,
-  onAddPerfil,
-  onUpdatePerfil,
-  onRemovePerfil,
-  onSetVisualizarComoPerfil,
-}) {
-  const usuarios = data.administracao?.usuarios || [];
-  const perfis = accessProfiles || [];
-  const perfisById = new Map(perfis.map((perfil) => [perfil.id, perfil]));
-  const previewPerfil = data.administracao?.visualizarComoPerfil || "";
-
-  return (
-    <div className="section-stack">
-      <div className="stats-grid stats-grid-4">
-        <StatCard label="Logins" value={usuarios.length} />
-        <StatCard label="Funcao ativa" value={currentAccess.label || currentUser.perfil} />
-        <StatCard label="Abas liberadas" value={visibleTabs.length} />
-        <StatCard label="Modo" value={isPreviewing ? "Visualizacao" : "Real"} />
-      </div>
-
-      <Card title="Sessao atual" subtitle="Troque o login ativo ou simule uma funcao sem retirar o acesso administrativo real.">
-        <div className="form-grid form-grid-2">
-          <Field label="Login ativo">
-            <select value={data.administracao?.usuarioAtivoId || ""} onChange={(event) => onSetUsuarioAtivo(event.target.value)}>
-              {usuarios.map((usuario) => {
-                const profile = perfisById.get(usuario.perfil);
-                return (
-                  <option key={usuario.id} value={usuario.id}>
-                    {usuario.nome || usuario.login || "Sem nome"} - {profile?.label || usuario.perfil}
-                  </option>
-                );
-              })}
-            </select>
-          </Field>
-          <Field label="Visualizar como">
-            <select
-              disabled={!actualAccess?.isAdmin}
-              value={previewPerfil}
-              onChange={(event) => onSetVisualizarComoPerfil(event.target.value)}
-            >
-              <option value="">Administrativo real</option>
-              {perfis.map((perfil) => (
-                <option key={perfil.id} value={perfil.id}>
-                  {perfil.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-      </Card>
-
-      {readOnly ? <div className="inline-note"><strong>Somente leitura</strong><span>Seu perfil pode consultar Logins, mas nao alterar usuarios ou permissoes.</span></div> : null}
-
-      <Card
-        title="Logins"
-        subtitle="Crie usuarios e vincule cada um a uma funcao de acesso."
-        actions={<button type="button" disabled={readOnly} className="btn btn-secondary" onClick={onAddUsuario}>Adicionar login</button>}
-      >
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Login</th>
-                <th>Cargo</th>
-                <th>Funcao de acesso</th>
-                <th>Ativo</th>
-                <th>Abas visiveis</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((usuario) => {
-                const profile = perfisById.get(usuario.perfil) || perfis[0];
-                const lockedAdmin = profile?.isAdmin && (usuario.id === "user-gerencia" || usuario.id === currentUser.id);
-                return (
-                  <tr key={usuario.id}>
-                    <td><input disabled={readOnly} value={usuario.nome} onChange={(event) => onUpdateUsuario(usuario.id, "nome", event.target.value)} /></td>
-                    <td><input disabled={readOnly} value={usuario.login} onChange={(event) => onUpdateUsuario(usuario.id, "login", event.target.value)} /></td>
-                    <td><input disabled={readOnly} value={usuario.cargo} onChange={(event) => onUpdateUsuario(usuario.id, "cargo", event.target.value)} /></td>
-                    <td>
-                      <select disabled={readOnly || lockedAdmin} value={usuario.perfil} onChange={(event) => onUpdateUsuario(usuario.id, "perfil", event.target.value)}>
-                        {perfis.map((perfil) => (
-                          <option key={perfil.id} value={perfil.id}>{perfil.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <select disabled={readOnly || lockedAdmin} value={usuario.ativo ? "sim" : "nao"} onChange={(event) => onUpdateUsuario(usuario.id, "ativo", event.target.value === "sim")}>
-                        <option value="sim">Sim</option>
-                        <option value="nao">Nao</option>
-                      </select>
-                    </td>
-                    <td className="cell-muted">{labelsForTabs(profile?.tabs || []) || "-"}</td>
-                    <td className="actions-cell">
-                      <button type="button" className="btn btn-ghost" onClick={() => onSetUsuarioAtivo(usuario.id)}>Usar</button>
-                      <button type="button" disabled={readOnly || lockedAdmin || usuarios.length <= 1} className="btn btn-danger" onClick={() => onRemoveUsuario(usuario.id)}>Excluir</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card
-        title="Permissoes por funcao"
-        subtitle="Configure o que cada funcao pode ver, editar e quais blocos do dashboard aparecem."
-        actions={<button type="button" disabled={readOnly} className="btn btn-secondary" onClick={onAddPerfil}>Adicionar funcao</button>}
-      >
-        <div className="permission-list">
-          {perfis.map((perfil) => (
-            <div key={perfil.id} className="permission-panel">
-              <div className="permission-head">
-                <Field label="Nome da funcao">
-                  <input disabled={readOnly || perfil.isAdmin} value={perfil.label} onChange={(event) => onUpdatePerfil(perfil.id, "label", event.target.value)} />
-                </Field>
-                <div className="permission-actions">
-                  <span className="status-chip">{perfil.isAdmin ? "Administrativo travado" : "Configuravel"}</span>
-                  <button type="button" disabled={readOnly || perfil.isAdmin} className="btn btn-danger" onClick={() => onRemovePerfil(perfil.id)}>Excluir funcao</button>
-                </div>
-              </div>
-
-              <div className="permission-matrix">
-                {TAB_ITEMS.map((tab) => {
-                  const canView = perfil.tabs.includes(tab.value);
-                  const canEdit = perfil.editableTabs.includes(tab.value);
-                  return (
-                    <div key={tab.value} className="permission-row">
-                      <strong>{tab.label}</strong>
-                      <label>
-                        <input
-                          disabled={readOnly || perfil.isAdmin}
-                          type="checkbox"
-                          checked={canView}
-                          onChange={(event) => onUpdatePerfil(perfil.id, "tabs", toggleValue(perfil.tabs, tab.value, event.target.checked))}
-                        />
-                        <span>Ver</span>
-                      </label>
-                      <label>
-                        <input
-                          disabled={readOnly || perfil.isAdmin || !canView}
-                          type="checkbox"
-                          checked={canEdit}
-                          onChange={(event) => onUpdatePerfil(perfil.id, "editableTabs", toggleValue(perfil.editableTabs, tab.value, event.target.checked))}
-                        />
-                        <span>Editar</span>
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="permission-dashboard">
-                <strong>Dashboard por funcao</strong>
-                <div className="check-grid check-grid-compact">
-                  {DASHBOARD_WIDGETS.map((widget) => (
-                    <label key={widget.value} className="check-card">
-                      <input
-                        disabled={readOnly || perfil.isAdmin || !perfil.tabs.includes("dashboard")}
-                        type="checkbox"
-                        checked={perfil.dashboardWidgets.includes(widget.value)}
-                        onChange={(event) =>
-                          onUpdatePerfil(perfil.id, "dashboardWidgets", toggleValue(perfil.dashboardWidgets, widget.value, event.target.checked))
-                        }
-                      />
-                      <strong>{widget.label}</strong>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <label className="permission-delete-history">
-                <input
-                  disabled={readOnly || perfil.isAdmin}
-                  type="checkbox"
-                  checked={perfil.canDeleteHistory}
-                  onChange={(event) => onUpdatePerfil(perfil.id, "canDeleteHistory", event.target.checked)}
-                />
-                <span>Pode excluir registros do historico</span>
-              </label>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
+function ProfileEditor({profile,onSave}) {
+  const [label,setLabel]=useState(profile.label),[tabs,setTabs]=useState(profile.tabs),[editableTabs,setEditable]=useState(profile.editableTabs),[canDeleteHistory,setDelete]=useState(profile.canDeleteHistory),[busy,setBusy]=useState(false);
+  const toggle=(list,id,checked)=>checked?[...new Set([...list,id])]:list.filter(v=>v!==id);
+  return <details className="profile-editor"><summary>{profile.label}</summary><form onSubmit={async event=>{event.preventDefault();setBusy(true);try{await onSave({id:profile.id,label,tabs,editableTabs,canDeleteHistory,expectedVersion:profile.version});}finally{setBusy(false);}}}>
+    <fieldset disabled={profile.isAdmin||busy}><Field label={'Nome do perfil '+profile.id}><input value={label} onChange={e=>setLabel(e.target.value)}/></Field>
+      <div className="profile-grid">{TAB_ITEMS.filter(t=>!['administracao','multiobra'].includes(t.value)).map(tab=><div key={tab.value}>
+        <label><input type="checkbox" checked={tabs.includes(tab.value)} onChange={e=>{setTabs(toggle(tabs,tab.value,e.target.checked));if(!e.target.checked)setEditable(editableTabs.filter(t=>t!==tab.value));}}/> Ler {tab.label}</label>
+        <label><input type="checkbox" checked={editableTabs.includes(tab.value)} onChange={e=>{setEditable(toggle(editableTabs,tab.value,e.target.checked));if(e.target.checked)setTabs(toggle(tabs,tab.value,true));}}/> Editar {tab.label}</label>
+      </div>)}</div>
+      <label><input type="checkbox" checked={canDeleteHistory} onChange={e=>setDelete(e.target.checked)}/> Excluir histórico</label>
+      <button className="btn btn-primary" type="submit">Salvar perfil</button>
+    </fieldset>
+  </form></details>;
 }

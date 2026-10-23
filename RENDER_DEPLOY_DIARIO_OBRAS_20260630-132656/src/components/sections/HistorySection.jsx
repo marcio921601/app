@@ -1,8 +1,9 @@
 import { Card } from "@/components/common/Card";
+import {PrintLayout} from '../print/PrintLayout';
 import { StatCard } from "@/components/common/StatCard";
 import { formatCurrency, formatNumber, formatShortDate, uniqueSorted } from "@/utils/formatters";
 
-export function HistorySection({ historicoOrdenado, canDelete, readOnly, onSaveCurrent, onLoad, onDelete }) {
+export function HistorySection({ historicoOrdenado, canDelete, readOnly, canRegister, onSaveCurrent, onLoad, onDelete,selectedDiary,obras=[] }) {
   return (
     <div className="section-stack">
       <div className="stats-grid stats-grid-4">
@@ -15,7 +16,7 @@ export function HistorySection({ historicoOrdenado, canDelete, readOnly, onSaveC
       <Card
         title="Historico diario"
         subtitle="Snapshots diarios por obra, data, resumo executivo e auditoria de alteracoes."
-        actions={<button type="button" disabled={readOnly} className="btn btn-secondary" onClick={onSaveCurrent}>Salvar registro atual</button>}
+        actions={<button type="button" disabled={!canRegister} className="btn btn-secondary" onClick={onSaveCurrent}>Salvar registro atual</button>}
       >
         <div className="table-wrap">
           <table className="data-table">
@@ -57,7 +58,7 @@ export function HistorySection({ historicoOrdenado, canDelete, readOnly, onSaveC
                     )}
                   </td>
                   <td className="actions-cell">
-                    <button type="button" disabled={readOnly} className="btn btn-ghost" onClick={() => onLoad(item.id)}>Editar</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => onLoad(item.id)}>Consultar</button>
                     <button type="button" disabled={!canDelete} className="btn btn-danger" onClick={() => onDelete(item.id)}>Excluir</button>
                   </td>
                 </tr>
@@ -66,6 +67,7 @@ export function HistorySection({ historicoOrdenado, canDelete, readOnly, onSaveC
           </table>
         </div>
       </Card>
+      {selectedDiary?<Card title="Consulta do diário"><PrintLayout preview data={selectedDiary} obraAtiva={obras.find(o=>o.id===selectedDiary.obraId)} totalPrevisto={selectedDiary.summary.totalPrevisto} totalPresentes={selectedDiary.summary.totalPresentes} totalHH={selectedDiary.summary.totalHH} totalQtd={selectedDiary.summary.totalQtd} totalRealizadoEstimado={selectedDiary.summary.totalRealizadoEstimado} servicosCalculados={selectedDiary.servicos}/></Card>:null}
     </div>
   );
 }

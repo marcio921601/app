@@ -2,9 +2,28 @@ services:
   - type: web
     name: diario-obras-itauba
     runtime: node
-    buildCommand: npm ci && npm run build
+    plan: free
+    region: virginia
+    branch: feat/operacao-online-obra30
+    rootDir: RENDER_DEPLOY_DIARIO_OBRAS_20260630-132656
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
-    healthCheckPath: /api/health
+    healthCheckPath: /api/ready
     envVars:
       - key: NODE_VERSION
-        value: 20.19.0
+        value: 24.15.0
+      - key: NODE_ENV
+        value: production
+      - key: APP_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SESSION_ENCRYPTION_KEY
+        sync: false

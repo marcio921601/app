@@ -100,9 +100,9 @@ export function BudgetBars({ rows = [] }) {
       <div className="bars-list">
         {rows.length ? (
           rows.slice(0, 6).map((item) => (
-            <div key={item.referencia} className="bars-item">
+            <div key={item.key} className="bars-item">
               <div className="bars-copy">
-                <strong>{item.referencia}</strong>
+                <strong>{item.referencia} · {item.obraNome}</strong>
                 <span>{formatCurrency(item.valorRealizado)} | {formatNumber(item.percentual)}%</span>
               </div>
               <div className="bars-track">

@@ -14,6 +14,7 @@ export function MultiobraSection({
   onApplyObraAtiva,
   onAddObra,
   onUpdateObra,
+  onSaveObra,
   onRemoveObra,
 }) {
   return (
@@ -54,29 +55,12 @@ export function MultiobraSection({
               </div>
             </div>
 
-            <div className="button-row">
-              <button type="button" className="btn btn-primary" onClick={onApplyObraAtiva}>
-                Aplicar obra ativa ao diario
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={onSync}>
-                {backendEnabled ? "Sincronizar backend" : "Backend em preparo"}
-              </button>
-            </div>
-
-            <div className="inline-note">
-              <strong>Status da API</strong>
-              <span>
-                {backendEnabled
-                  ? `Configurada (${syncState === "syncing" ? "sincronizando" : syncState === "synced" ? "sincronizada" : "pronta"})`
-                  : "Fallback local ativo com interface pronta para conectar endpoints."}
-              </span>
-            </div>
           </div>
         </Card>
 
         <Card
           title="Cadastro de obras"
-          subtitle="A base multiobra continua compativel com o modelo atual e ganhou separacao para futuro backend."
+          subtitle="Preencha os campos e salve cada cadastro."
           actions={
             <button type="button" className="btn btn-secondary" onClick={onAddObra}>
               Adicionar obra
@@ -106,11 +90,12 @@ export function MultiobraSection({
                     <td><input value={obra.responsavel} onChange={(event) => onUpdateObra(index, "responsavel", event.target.value)} /></td>
                     <td><input value={obra.prazo} onChange={(event) => onUpdateObra(index, "prazo", event.target.value)} /></td>
                     <td className="actions-cell">
+                      <button type="button" className="btn btn-primary" onClick={()=>onSaveObra(obra.id)}>Salvar</button>
                       <button type="button" className="btn btn-ghost" onClick={() => onSelectObra(obra.id)}>
                         Ativar
                       </button>
                       <button type="button" className="btn btn-danger" onClick={() => onRemoveObra(index)}>
-                        Excluir
+                        Arquivar
                       </button>
                     </td>
                   </tr>

@@ -1,3 +1,4 @@
+import {emptyDiary,localWorkDate} from '../../shared/diary.mjs';
 export const STORAGE_KEY = "diario-obra-app-v6-itauba";
 export const BACKUP_STORAGE_KEY = `${STORAGE_KEY}:backup`;
 export const APP_SCHEMA_VERSION = 9;
@@ -37,7 +38,7 @@ const ALL_TAB_VALUES = TAB_ITEMS.map((item) => item.value);
 const ALL_DASHBOARD_WIDGETS = DASHBOARD_WIDGETS.map((item) => item.value);
 
 export function createAccessProfile(partial = {}) {
-  const id = partial.id || partial.value || `perfil-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = partial.id || partial.value || crypto.randomUUID();
   const isAdmin = id === "gerencia" || partial.isAdmin === true;
   const tabs = isAdmin ? ALL_TAB_VALUES : Array.isArray(partial.tabs) ? partial.tabs : [];
   const editableTabs = isAdmin ? ALL_TAB_VALUES : Array.isArray(partial.editableTabs) ? partial.editableTabs : [];
@@ -63,7 +64,7 @@ export const ACCESS_PROFILES = {
     id: "apontador",
     label: "Apontador",
     tabs: ["diario", "produtividade", "historico"],
-    editableTabs: ["diario", "produtividade", "historico"],
+    editableTabs: ["diario", "produtividade"],
     dashboardWidgets: ["resumo", "servicos"],
   }),
   engenheiro: createAccessProfile({
@@ -121,7 +122,7 @@ export const DEFAULT_FUNCIONARIOS = BANCO_TIPOS_PROFISSIONAIS.map((funcao) => cr
 
 export function createAtividade(partial = {}) {
   return {
-    id: partial.id || `atividade-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: partial.id || crypto.randomUUID(),
     inicio: partial.inicio || "07:00",
     fim: partial.fim || "17:00",
     local: partial.local || "",
@@ -151,7 +152,7 @@ export function createServico() {
 
 export function createObra(partial = {}) {
   return {
-    id: partial.id || `obra-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: partial.id || crypto.randomUUID(),
     codigo: partial.codigo || "",
     nome: partial.nome || "",
     cliente: partial.cliente || "",
@@ -161,21 +162,15 @@ export function createObra(partial = {}) {
   };
 }
 
-export const DEFAULT_OBRAS = [
-  createObra({
-    id: "obra-1",
-    codigo: "VMX-001",
-    nome: "VIADUTO MAX STANDACHER - PR",
-  }),
-];
+export const DEFAULT_OBRAS = [];
 
 export function createProfissional(partial = {}) {
   return {
-    id: partial.id || `prof-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: partial.id || crypto.randomUUID(),
     nome: partial.nome || "",
     matricula: partial.matricula || "",
     funcao: partial.funcao || "",
-    obraId: partial.obraId || DEFAULT_OBRAS[0].id,
+    obraId: partial.obraId || "",
     ativo: partial.ativo ?? true,
     custoHora: Number(partial.custoHora || 0),
     observacoes: partial.observacoes || "",
@@ -184,7 +179,7 @@ export function createProfissional(partial = {}) {
 
 export function createAfastamento(partial = {}) {
   return {
-    id: partial.id || `afast-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: partial.id || crypto.randomUUID(),
     profissionalId: partial.profissionalId || "",
     tipo: partial.tipo || "ausencia",
     inicio: partial.inicio || new Date().toISOString().slice(0, 10),
@@ -197,7 +192,7 @@ export function createAfastamento(partial = {}) {
 
 export function createUsuario(partial = {}) {
   return {
-    id: partial.id || `usuario-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: partial.id || crypto.randomUUID(),
     nome: partial.nome || "",
     login: partial.login || "",
     cargo: partial.cargo || "",
@@ -206,74 +201,12 @@ export function createUsuario(partial = {}) {
   };
 }
 
-export const DEFAULT_PROFISSIONAIS = [
-  createProfissional({ id: "prof-1", nome: "Joao Silva", matricula: "001", funcao: "ENCARREGADO DE CARPINTARIA", obraId: DEFAULT_OBRAS[0].id }),
-  createProfissional({ id: "prof-2", nome: "Maria Souza", matricula: "002", funcao: "CARPINTEIRO", obraId: DEFAULT_OBRAS[0].id }),
-  createProfissional({ id: "prof-3", nome: "Carlos Lima", matricula: "003", funcao: "SERVENTE", obraId: DEFAULT_OBRAS[0].id }),
-  createProfissional({ id: "prof-4", nome: "Ana Rocha", matricula: "004", funcao: "ARMADOR", obraId: DEFAULT_OBRAS[0].id }),
-];
+export const DEFAULT_PROFISSIONAIS = [];
 
-export const DEFAULT_USUARIOS = [
-  createUsuario({ id: "user-apontador", nome: "Apontador", login: "apontador", cargo: "Apontador", perfil: "apontador" }),
-  createUsuario({ id: "user-engenheiro", nome: "Engenheiro", login: "engenheiro", cargo: "Engenheiro", perfil: "engenheiro" }),
-  createUsuario({ id: "user-rh", nome: "RH", login: "rh", cargo: "Recursos Humanos", perfil: "rh" }),
-  createUsuario({ id: "user-gerencia", nome: "Administrativo", login: "administrativo", cargo: "Administracao", perfil: "gerencia" }),
-];
+export const DEFAULT_USUARIOS = [];
 
-export const ORCAMENTO_EXEMPLO = [
-  { nivel: 1, referencia: "1", descricao: "IVAI - PONTE - obra", qtdeOrcada: 0, unidade: "", precoTotal: 0, bdi: 0 },
-  { nivel: 2, referencia: "1001", descricao: "01.01 FUNDACAO - ESTACAS RAIZ", qtdeOrcada: 0, unidade: "", precoTotal: 0, bdi: 0 },
-  { nivel: 3, referencia: "1001001", descricao: "AQUISICAO DE ACO", qtdeOrcada: 0, unidade: "", precoTotal: 0, bdi: 0 },
-  { nivel: 4, referencia: "1001001001", descricao: "Itauba fornecimento aco ca50 diam. 6,3 mm", qtdeOrcada: 1444.36, unidade: "kg", precoTotal: 9743.65, bdi: 0 },
-  { nivel: 4, referencia: "1001001002", descricao: "Itauba fornecimento aco ca50 diam. 20 mm", qtdeOrcada: 12221.5, unidade: "kg", precoTotal: 75374.88, bdi: 0 },
-];
+export const ORCAMENTO_EXEMPLO = [];
 
 export function buildInitialData() {
-  return {
-    schemaVersion: APP_SCHEMA_VERSION,
-    updatedAt: new Date().toISOString(),
-    cabecalho: {
-      obra: DEFAULT_OBRAS[0].nome,
-      folha: "00059",
-      data: new Date().toISOString().slice(0, 10),
-      periodoManha: "07:00 - 12:00",
-      periodoTarde: "13:00 - 17:00",
-      climaManha: "bom",
-      climaTarde: "bom",
-    },
-    multiobra: {
-      obraAtivaId: DEFAULT_OBRAS[0].id,
-      obras: DEFAULT_OBRAS,
-    },
-    cadastros: {
-      profissionais: DEFAULT_PROFISSIONAIS,
-      afastamentos: [],
-    },
-    administracao: {
-      usuarioAtivoId: "user-gerencia",
-      usuarios: DEFAULT_USUARIOS,
-      perfis: Object.values(ACCESS_PROFILES),
-      visualizarComoPerfil: "",
-      cargos: BANCO_TIPOS_PROFISSIONAIS,
-    },
-    funcionarios: DEFAULT_FUNCIONARIOS,
-    presencas: DEFAULT_PROFISSIONAIS.map((item) => item.id),
-    atividades: [createAtividade()],
-    observacoes: "",
-    consideracoes: "",
-    equipamentos: "",
-    servicos: [createServico()],
-    orcamento: ORCAMENTO_EXEMPLO,
-    historico: [],
-    gerencial: {
-      prazoMarco: "",
-      responsavel: "",
-      riscos: "",
-      restricoes: "",
-      aquisicoes: "",
-      sst: "",
-      ppc: "",
-      proximasAcoes: "",
-    },
-  };
+  return {...emptyDiary(localWorkDate()),schemaVersion:APP_SCHEMA_VERSION,funcionarios:[],servicos:[],orcamento:[],historico:[],multiobra:{obraAtivaId:'',obras:[]},cadastros:{profissionais:[],afastamentos:[]},administracao:{usuarios:[],perfis:[],cargos:BANCO_TIPOS_PROFISSIONAIS}};
 }

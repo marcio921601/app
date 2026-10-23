@@ -94,8 +94,8 @@ export function DashboardSection({
               </thead>
               <tbody>
                 {dashboardOrcamento.map((item) => (
-                  <tr key={item.referencia}>
-                    <td>{item.referencia}</td>
+                  <tr key={item.key}>
+                    <td>{item.referencia}<small className="muted"> · {item.obraNome}</small></td>
                     <td>{item.descricao}</td>
                     <td>{item.unidade}</td>
                     <td>{formatNumber(item.qtdeOrcada)}</td>

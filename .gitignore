@@ -1,0 +1,6 @@
+.superpowers/
+.npm-cache/
+operacao-local/
+*.env
+.env
+!.env.example
