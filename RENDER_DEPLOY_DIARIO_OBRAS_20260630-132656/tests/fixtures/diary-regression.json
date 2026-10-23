@@ -1,0 +1,19 @@
+{
+  "data":"2026-10-23",
+  "profissionais":[
+    {"id":"11111111-1111-4111-8111-111111111111","nome":"Pessoa fictícia A","funcao":"ARMADOR","matricula":"T1","custoHora":20,"ativo":true,"observacoes":""},
+    {"id":"22222222-2222-4222-8222-222222222222","nome":"Pessoa fictícia B","funcao":"CARPINTEIRO","matricula":"T2","custoHora":25,"ativo":true,"observacoes":""}
+  ],
+  "orcamento":[
+    {"nivel":1,"referencia":"1","descricao":"Obra fictícia","qtdeOrcada":0,"unidade":"","precoTotal":0,"bdi":0},
+    {"nivel":2,"referencia":"1.1","descricao":"Grupo fictício","qtdeOrcada":0,"unidade":"","precoTotal":0,"bdi":0},
+    {"nivel":3,"referencia":"1.1.1","descricao":"Serviço fictício","qtdeOrcada":0,"unidade":"","precoTotal":0,"bdi":0},
+    {"nivel":4,"referencia":"1.1.1.1","descricao":"Item fictício","qtdeOrcada":100,"unidade":"m","precoTotal":1000,"bdi":0}
+  ],
+  "payload":{
+    "cabecalho":{"data":"2026-10-23","folha":"T01"},
+    "presencas":["11111111-1111-4111-8111-111111111111","22222222-2222-4222-8222-222222222222"],
+    "atividades":[{"id":"33333333-3333-4333-8333-333333333333","inicio":"07:00","fim":"11:00","local":"Frente fictícia","tarefa":"Serviço fictício","orcamentoNivel3Ref":"1.1.1","orcamentoRef":"1.1.1.1","unidade":"m","quantidadeProduzida":12,"percentualExecutado":"","alocados":["11111111-1111-4111-8111-111111111111","22222222-2222-4222-8222-222222222222"]}],
+    "observacoes":"Registro fictício para regressão"
+  }
+}

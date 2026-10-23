@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef,useState } from "react";
 import { Card } from "@/components/common/Card";
 import { IssueSummary } from "@/components/common/IssueSummary";
 import { StatCard } from "@/components/common/StatCard";
@@ -15,18 +15,32 @@ import { ProductivitySection } from "@/components/sections/ProductivitySection";
 import { PrintLayout } from "@/components/print/PrintLayout";
 import { ITAUBA_LOGO } from "@/data/defaults";
 import { useDiaryApp } from "@/hooks/useDiaryApp";
+import { useSession } from "@/hooks/useSession";
+import { AuthScreen } from "@/components/auth/AuthScreen";
+import { WorkSelector } from "@/components/common/WorkSelector";
+import { SaveStatus } from "@/components/common/SaveStatus";
+import { ConflictDialog } from "@/components/common/ConflictDialog";
+import { downloadJson } from "@/services/exports";
 import { formatCurrency, formatNumber } from "@/utils/formatters";
 
 function getSaveLabel(saveState) {
   const map = {
     idle: "Pronto",
-    dirty: "Edicao em andamento",
-    saved: "Auto-salvo",
+    altered: "Alterado",
+    sending: "Enviando",
+    saved: "Salvo no servidor",
+    failed: "Falha no envio",
+    conflict: "Conflito",
   };
   return map[saveState] || "Pronto";
 }
 
 export default function App() {
+  const session=useSession();
+  return session.status==='authenticated'?<DiaryApplication key={session.user.id} session={session}/>:<AuthScreen session={session}/>;
+}
+function DiaryApplication({session}) {
+  const [logoutDialog,setLogoutDialog]=useState(false),[logoutError,setLogoutError]=useState('');
   const fileInputRef = useRef(null);
   const {
     data,
@@ -41,7 +55,18 @@ export default function App() {
     access,
     derived,
     actions,
-  } = useDiaryApp();
+    loading,error,budgetPreview,shared,selectedHistory,
+  } = useDiaryApp(session);
+  async function finishLogout(exportFirst=false) {
+    try{
+      if(exportFirst)downloadJson(shared.pendingExport(),'edicoes-pendentes.json');
+      shared.clearForUser();await session.logout();
+    }catch(error){setLogoutError(error.message);setLogoutDialog(false);shared.resume();}
+  }
+  function requestLogout() {
+    shared.pause();
+    if(shared.hasPending)setLogoutDialog(true);else finishLogout();
+  }
 
   const {
     obraAtiva,
@@ -99,14 +124,13 @@ export default function App() {
                 <span className="badge badge-brand">Sistema Itauba</span>
                 <span className="badge">Perfil: {access.isPreviewing ? `${access.actualAccess.label} vendo ${access.currentAccess.label}` : access.currentAccess.label}</span>
                 <span className="badge">Usuario: {access.currentUser.nome || access.currentUser.login || "-"}</span>
-                <span className="badge">{backendEnabled ? "Backend configuravel" : "Backend preparado"}</span>
+                <button className="btn btn-secondary" onClick={requestLogout}>Sair</button>
               </div>
 
               <div>
                 <h1 className="hero-title">Controle diario de obra com visao multiobra</h1>
                 <p className="hero-text">
-                  O app foi reorganizado para separar componentes, melhorar a persistencia local, preparar a camada de backend
-                  e manter o modelo de dados compativel com o que ja existia.
+                  Diário, equipe e produtividade das obras em um só lugar.
                 </p>
               </div>
 
@@ -136,14 +160,14 @@ export default function App() {
               </div>
 
               <div className="hero-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                <button type="button" disabled={!session.user.isAdmin||loading} className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
                   Importar planilhas
                 </button>
-                <button type="button" disabled={!access.canEditTab("historico")} className="btn btn-secondary" onClick={actions.saveCurrentToHistory}>
+                <button type="button" disabled={!access.canEditTab("diario")||loading} className="btn btn-secondary" onClick={actions.saveCurrentToHistory}>
                   Salvar dia no historico
                 </button>
-                <button type="button" className="btn btn-primary" onClick={actions.saveNow}>
-                  Salvar dados locais
+                <button type="button" disabled={!access.canEditTab("diario")||loading} className="btn btn-primary" onClick={actions.saveNow}>
+                  Salvar no servidor
                 </button>
                 {access.isPreviewing ? (
                   <button type="button" className="btn btn-secondary" onClick={() => actions.setVisualizarComoPerfil("")}>
@@ -167,12 +191,26 @@ export default function App() {
               <strong>Status do ambiente</strong>
               <p>{statusMessage}</p>
             </div>
-            <div className="status-tray">
-              <span className="status-chip">{getSaveLabel(saveState)}</span>
-              <span className="status-chip">{backendEnabled ? "API pronta" : "Local + backup"}</span>
-              <span className="status-chip">{syncState === "syncing" ? "Sincronizando" : syncState === "synced" ? "Sincronizado" : "Sem sync"}</span>
-            </div>
+            <SaveStatus state={saveState} onRetry={actions.saveNow}/>
           </section>
+          <WorkSelector obras={data.multiobra.obras.filter(o=>o.version)} obraId={data.multiobra.obraAtivaId} onChange={actions.selectObraAtiva} disabled={loading}/>
+          {loading?<p role="status">Carregando dados…</p>:null}
+          {error?<div role="alert" className="inline-note"><span>{error.message}</span><button className="btn btn-secondary" onClick={actions.reload}>Tentar novamente</button></div>:null}
+          {shared.storageError?<p role="alert">{shared.storageError.message}</p>:null}
+          {logoutError?<p role="alert">{logoutError}</p>:null}
+          {shared.restoreAvailable?<Card title="Edição pendente neste navegador">
+            <p>Existe uma edição desta conta para a obra e data selecionadas. Confira antes de restaurar.</p>
+            <div className="button-row"><button className="btn btn-primary" onClick={shared.restorePending}>Restaurar edição pendente</button>
+              <button className="btn btn-secondary" onClick={()=>downloadJson(shared.pendingExport(),'edicoes-pendentes.json')}>Exportar edição pendente</button>
+              <button className="btn btn-danger" onClick={shared.discardPending}>Descartar edição pendente</button></div>
+          </Card>:null}
+          {budgetPreview?<Card title="Conferir importação de orçamento">
+            <p>{budgetPreview.rows.length} itens · {budgetPreview.errors.length} inconsistências</p>
+            <div className="table-wrap"><table className="data-table"><thead><tr><th>Referência</th><th>Descrição</th><th>Quantidade</th><th>Unidade</th></tr></thead><tbody>{budgetPreview.rows.slice(0,100).map((r,i)=><tr key={i}><td>{r.referencia}</td><td>{r.descricao}</td><td>{r.qtdeOrcada}</td><td>{r.unidade}</td></tr>)}</tbody></table></div>
+            {budgetPreview.errors.slice(0,100).map((e,i)=><p role="alert" key={i}>Linha {e.row}: {e.message}</p>)}
+            <button className="btn btn-primary" disabled={!!budgetPreview.errors.length} onClick={actions.confirmBudgetImport}>Confirmar importação</button>
+            <button className="btn btn-secondary" onClick={actions.cancelBudgetImport}>Cancelar</button>
+          </Card>:null}
 
           <IssueSummary errors={validation.errors} warnings={validation.warnings} />
 
@@ -187,7 +225,7 @@ export default function App() {
           <Card bodyClassName="tab-card-body">
             <TabsBar items={access.visibleTabs} value={activeTab} onChange={actions.setActiveTab} />
 
-            <div className="tab-panel">
+            <fieldset className="tab-panel" disabled={loading||!!shared.restoreAvailable}>
               {activeTab === "multiobra" ? (
                 <MultiobraSection
                   data={data}
@@ -195,11 +233,10 @@ export default function App() {
                   indicadoresObraAtiva={indicadoresObraAtiva}
                   backendEnabled={backendEnabled}
                   syncState={syncState}
-                  onSync={actions.syncBackend}
                   onSelectObra={actions.selectObraAtiva}
-                  onApplyObraAtiva={actions.applyObraAtivaAoDiario}
                   onAddObra={actions.addObra}
                   onUpdateObra={actions.updateObra}
+                  onSaveObra={actions.saveObra}
                   onRemoveObra={actions.removeObra}
                 />
               ) : null}
@@ -215,9 +252,11 @@ export default function App() {
                   onSelectObra={actions.selectObraAtiva}
                   onAddProfissional={actions.addProfissional}
                   onUpdateProfissional={actions.updateProfissional}
+                  onSaveProfissional={actions.saveProfissional}
                   onRemoveProfissional={actions.removeProfissional}
                   onAddAfastamento={actions.addAfastamento}
                   onUpdateAfastamento={actions.updateAfastamento}
+                  onSaveAfastamento={actions.saveAfastamento}
                   onRemoveAfastamento={actions.removeAfastamento}
                 />
               ) : null}
@@ -265,6 +304,7 @@ export default function App() {
 
               {activeTab === "gerencial" ? (
                 <GerencialSection
+                  readOnly={!access.canEditTab("gerencial")}
                   data={data}
                   gerencialIndicadores={gerencialIndicadores}
                   resumoROS={resumoROS}
@@ -295,8 +335,11 @@ export default function App() {
                   canDelete={access.canDeleteHistory}
                   readOnly={!access.canEditTab("historico")}
                   onSaveCurrent={actions.saveCurrentToHistory}
+                  canRegister={access.canEditTab("diario")}
                   onLoad={actions.loadFromHistory}
                   onDelete={actions.deleteFromHistory}
+                  selectedDiary={selectedHistory}
+                  obras={data.multiobra.obras}
                 />
               ) : null}
 
@@ -311,6 +354,7 @@ export default function App() {
                   onRequestImport={() => fileInputRef.current?.click()}
                   onAddItem={actions.addItemOrcamento}
                   onUpdateOrcamento={actions.updateOrcamento}
+                  onSaveItem={actions.saveItemOrcamento}
                   onRemoveItem={actions.removeItemOrcamento}
                   onRemoveItems={actions.removeItensOrcamento}
                 />
@@ -334,13 +378,24 @@ export default function App() {
                   onUpdatePerfil={actions.updatePerfilAcesso}
                   onRemovePerfil={actions.removePerfilAcesso}
                   onSetVisualizarComoPerfil={actions.setVisualizarComoPerfil}
+                  onInviteUser={actions.inviteUser}
+                  onUpdateMemberships={actions.updateMemberships}
+                  onDeactivateUser={actions.deactivateUser}
+                  onUpdateProfile={actions.updateProfile}
                 />
               ) : null}
-            </div>
+            </fieldset>
           </Card>
         </div>
       </div>
 
+      <ConflictDialog conflict={shared.conflict} local={shared.payload} onReapply={shared.reapply} onDiscard={shared.useRemote} canRestore={access.canDeleteHistory}/>
+      {logoutDialog?<div className="dialog-backdrop"><section className="conflict-dialog" role="dialog" aria-modal="true" aria-label="Edições pendentes ao sair">
+        <h2>Edições pendentes</h2><p>Há conteúdo ainda não confirmado no servidor. Você pode exportar uma cópia antes de sair.</p>
+        <div className="button-row"><button className="btn btn-primary" onClick={()=>finishLogout(true)}>Exportar e sair</button>
+          <button className="btn btn-danger" onClick={()=>finishLogout(false)}>Descartar e sair</button>
+          <button className="btn btn-secondary" onClick={()=>{setLogoutDialog(false);shared.resume();}}>Continuar editando</button></div>
+      </section></div>:null}
       <PrintLayout
         data={data}
         obraAtiva={obraAtiva}

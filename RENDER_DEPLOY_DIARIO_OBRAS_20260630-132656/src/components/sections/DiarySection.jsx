@@ -94,7 +94,7 @@ export function DiarySection({
       <Card title="Cabecalho do diario" subtitle="Dados gerais do dia; o lancamento operacional fica dividido abaixo.">
         <div className="form-grid form-grid-4">
           <Field label="Obra" className="span-2">
-            <input disabled={readOnly} value={data.cabecalho.obra} onChange={(event) => onUpdateCabecalho("obra", event.target.value)} />
+            <input readOnly value={data.cabecalho.obra} />
           </Field>
           <Field label="No da folha">
             <input disabled={readOnly} value={data.cabecalho.folha} onChange={(event) => onUpdateCabecalho("folha", event.target.value)} />

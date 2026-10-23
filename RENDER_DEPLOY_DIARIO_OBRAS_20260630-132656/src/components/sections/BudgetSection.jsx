@@ -14,6 +14,7 @@ export function BudgetSection({
   onRequestImport,
   onAddItem,
   onUpdateOrcamento,
+  onSaveItem,
   onRemoveItem,
   onRemoveItems,
 }) {
@@ -100,6 +101,7 @@ export function BudgetSection({
                     <td><input type="number" value={item.precoTotal} onChange={(event) => onUpdateOrcamento(originalIndex, "precoTotal", event.target.value)} /></td>
                     <td><input type="number" value={item.bdi} onChange={(event) => onUpdateOrcamento(originalIndex, "bdi", event.target.value)} /></td>
                     <td className="actions-cell">
+                      <button type="button" className="btn btn-primary" onClick={()=>onSaveItem(item.id)}>Salvar</button>
                       <button
                         type="button"
                         className="btn btn-danger"

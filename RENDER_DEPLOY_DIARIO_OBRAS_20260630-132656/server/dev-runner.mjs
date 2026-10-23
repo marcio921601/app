@@ -50,5 +50,5 @@ if (!existsSync(nodeModulesBin)) {
   process.exit(1);
 }
 
-startProcess("API", process.execPath, [path.join(__dirname, "server.mjs")], { PORT: "3001" });
+startProcess("API", process.execPath, ["--env-file-if-exists=.env", path.join(__dirname, "server.mjs")], { PORT: "3001" });
 startProcess("Vite", process.execPath, [nodeModulesBin, "--host", "0.0.0.0", "--port", "5173"]);

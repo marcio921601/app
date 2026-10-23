@@ -1,11 +1,11 @@
 import { ITAUBA_LOGO } from "@/data/defaults";
 import { formatCurrency, formatNumber, formatShortDate, getClimaLabel } from "@/utils/formatters";
 
-export function PrintLayout({ data, obraAtiva, funcionariosResumo = [], totalPrevisto, totalPresentes, totalHH, totalQtd, totalRealizadoEstimado, servicosCalculados }) {
-  const funcionarios = (funcionariosResumo.length ? funcionariosResumo : data.funcionarios).filter((item) => item.previsto || item.presente || item.observacoes);
+export function PrintLayout({ data, obraAtiva, funcionariosResumo = [], totalPrevisto, totalPresentes, totalHH, totalQtd, totalRealizadoEstimado, servicosCalculados,preview=false }) {
+  const funcionarios = (funcionariosResumo.length ? funcionariosResumo : data.funcionarios||[]).filter((item) => item.previsto || item.presente || item.observacoes);
 
   return (
-    <div className="print-layout">
+    <div className={preview?"print-layout is-preview":"print-layout"}>
       <div className="print-header">
         <div>
           <div className="print-kicker">Itauba Engenharia</div>
@@ -37,7 +37,7 @@ export function PrintLayout({ data, obraAtiva, funcionariosResumo = [], totalPre
           <PrintBox label="Previsto" value={totalPrevisto} />
           <PrintBox label="Presentes" value={totalPresentes} />
           <PrintBox label="HH total" value={formatNumber(totalHH)} />
-          <PrintBox label="Producao" value={formatNumber(totalQtd)} />
+          <PrintBox label="Producao" value={totalQtd===null?'Por unidade':formatNumber(totalQtd)} />
           <PrintBox label="Valor realizado" value={formatCurrency(totalRealizadoEstimado)} />
         </div>
       </section>
